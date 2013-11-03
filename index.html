@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>dc.js - Series Example</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="components/dc.css"/>
+</head>
+<body>
+
+<div id="test">
+ <span class="reset" style="display: none;">Current filter: <span class="filter"></span></span>
+ </div>
+<button onclick="button1()">1</button>
+<button onclick="button2()">2</button>
+<button onclick="button3()">3</button>
+
+<script type="text/javascript" src="components/d3.js"></script>
+<script type="text/javascript" src="components/crossfilter.js"></script>
+<script type="text/javascript" src="components/dc.js"></script>
+<script type="text/javascript">
+
+var chart = dc.seriesChart("#test");
+// var chart = dc.barChart("#fluctuation-chart");
+
+var ndx, runDimension, runGroup;
+
+var dateParseFormat = d3.time.format("%Y-%m-%dT%X");
+//var dateOutputFormat = d3.time.format("%S");
+
+    
+d3.json("http://localhost:9200/log/iis/_search?sort=date:asc&size=400000",   function(error, experiments) {
+
+    var startDate = dateParseFormat.parse(experiments.hits.hits[0]._source.Date);
+    
+//dateFormat.parse(d.date), 
+  ndx = crossfilter(experiments.hits.hits);
+  
+    durationDimension = ndx.dimension(function(d) {
+      return d._source.Duration;
+  });
+    
+    deltaTimeDuration = ndx.dimension(function(d){
+        return (dateParseFormat.parse(d._source.Date) - startDate) / 1000;
+    });
+    
+    deltaTimeGroup = deltaTimeDuration.group().reduce(
+        function(p,v){
+            ++p.Count;
+            p.TotalDuration += v._source.Duration
+            p.AverageDuration = p.TotalDuration / p.Count;
+            p.MinimumDuration = Math.min(p.MinimumDuration, v._source.Duration)
+            p.MaximumDuration = Math.max(p.MaximumDuration, v._source.Duration)
+            return p;
+        }, function(p,v){
+            --p.Count;
+            p.TotalDuration -= v._source.Duration
+            p.AverageDuration = p.TotalDuration / p.Count;
+            p.MinimumDuration = Math.min(p.MinimumDuration, v._source.Duration)
+            p.MaximumDuration = Math.max(p.MaximumDuration, v._source.Duration)
+            return p;
+        }, function(){
+            return { TotalDuration:0, Count: 0, AverageDuration: 0, MaximumDuration: 0, MinimumDuration: 0 };
+        }
+    );
+  
+    //runGroup.
+    
+    //runGroup = runDimension.group();
+//  runGroup = ndx.dimension(function(d) {
+//      return (dateParseFormat.parse(d._source.Date) - startDate) / 1000}
+//  ).group();
+
+  //runGroup = runDimension.group();//.reduceSum(function(d) { return +d.duration; });
+  //runGroup = runDimension.group();
+  
+  chart
+    .width(1280)
+    .height(480)
+    .chart(function(c) { return dc.lineChart(c); })
+    .x(d3.scale.linear())
+    .brushOn(true)
+    .yAxisLabel("Duration in milliseconds")
+    .xAxisLabel("Time")
+    .elasticY(true)
+    .elasticX(true)
+    .dimension(durationDimension)
+    .group(deltaTimeGroup)
+    .mouseZoomable(false)
+    .seriesAccessor(function(d) {return "Duration";})
+    .keyAccessor(function(d) {
+        return d.key;
+    })
+    .valueAccessor(function(d) {return d.value.AverageDuration;})
+    .stack(deltaTimeGroup, function(d){return d.value.MinimumDuration;})
+    .turnOnControls(true);
+    // .legend(dc.legend().x(700).y(300).itemHeight(13).gap(5));
+  chart.yAxis().tickFormat(function(d) {return (d);});
+  chart.margins().left += 40;
+
+// chart
+// .width(768)
+// .height(480)
+// .dimension(runDimension)
+// .group(runGroup)
+// .elasticY(true)
+// .centerBar(true)
+// .x(d3.scale.linear());
+
+
+  dc.renderAll();
+
+});
+
+//function load_button(file) {
+//    return function load_it() {
+//        d3.csv(file, function(error, experiments) {
+//            ndx.remove();
+//            ndx.add(experiments);
+//            dc.redrawAll();
+//        });
+//    };
+//}
+//
+//var button1 = load_button("morley.csv"),
+//    button2 = load_button("morley2.csv"),
+//    button3 = load_button("morley3.csv");
+
+</script>
+
+</body>
+</html>
