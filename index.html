@@ -10,17 +10,21 @@
 <div id="test">
  <span class="reset" style="display: none;">Current filter: <span class="filter"></span></span>
  </div>
-<button onclick="button1()">1</button>
-<button onclick="button2()">2</button>
-<button onclick="button3()">3</button>
-
+    
+<div id="range">
+<span class="reset" style="display: none;">Current filter: <span class="filter"></span></span>
+ </div>
+    
 <script type="text/javascript" src="components/d3.js"></script>
 <script type="text/javascript" src="components/crossfilter.js"></script>
 <script type="text/javascript" src="components/dc.js"></script>
 <script type="text/javascript">
 
-var chart = dc.seriesChart("#test");
-// var chart = dc.barChart("#fluctuation-chart");
+
+var selectorChart = dc.barChart("#range");
+var lineChart = dc.lineChart("#test");
+                             
+//var chart = dc.barChart("#fluctuation-chart");
 
 var ndx, runDimension, runGroup;
 
@@ -39,8 +43,10 @@ d3.json("http://localhost:9200/log/iis/_search?sort=date:asc&size=400000",   fun
       return d._source.Duration;
   });
     
+    deltaTimeTween = ndx.dimension(function(d){ return dateParseFormat.parse(d._source.Date) - startDate }).group();
+    
     deltaTimeDuration = ndx.dimension(function(d){
-        return (dateParseFormat.parse(d._source.Date) - startDate) / 1000;
+        return Math.round((dateParseFormat.parse(d._source.Date) - startDate) / 1000 / 60);
     });
     
     deltaTimeGroup = deltaTimeDuration.group().reduce(
@@ -59,43 +65,68 @@ d3.json("http://localhost:9200/log/iis/_search?sort=date:asc&size=400000",   fun
             p.MaximumDuration = Math.max(p.MaximumDuration, v._source.Duration)
             return p;
         }, function(){
-            return { TotalDuration:0, Count: 0, AverageDuration: 0, MaximumDuration: 0, MinimumDuration: 0 };
+            return { TotalDuration:0, Count: 0, AverageDuration: 0, MaximumDuration: 0, MinimumDuration: 999999 };
         }
     );
   
-    //runGroup.
-    
-    //runGroup = runDimension.group();
-//  runGroup = ndx.dimension(function(d) {
-//      return (dateParseFormat.parse(d._source.Date) - startDate) / 1000}
-//  ).group();
 
-  //runGroup = runDimension.group();//.reduceSum(function(d) { return +d.duration; });
-  //runGroup = runDimension.group();
-  
-  chart
-    .width(1280)
-    .height(480)
-    .chart(function(c) { return dc.lineChart(c); })
-    .x(d3.scale.linear())
-    .brushOn(true)
-    .yAxisLabel("Duration in milliseconds")
-    .xAxisLabel("Time")
-    .elasticY(true)
-    .elasticX(true)
+selectorChart.width(800)
+    .height(80)
+    .margins({top: 0, right: 50, bottom: 20, left: 40})
     .dimension(durationDimension)
     .group(deltaTimeGroup)
-    .mouseZoomable(false)
-    .seriesAccessor(function(d) {return "Duration";})
-    .keyAccessor(function(d) {
-        return d.key;
-    })
-    .valueAccessor(function(d) {return d.value.AverageDuration;})
-    .stack(deltaTimeGroup, function(d){return d.value.MinimumDuration;})
-    .turnOnControls(true);
-    // .legend(dc.legend().x(700).y(300).itemHeight(13).gap(5));
-  chart.yAxis().tickFormat(function(d) {return (d);});
-  chart.margins().left += 40;
+    .x(d3.scale.linear())
+    .centerBar(true)
+    .gap(1)
+    .elasticX(true)
+    .keyAccessor(function(d){return d.key;})
+    .valueAccessor(function(d) {return d.value.Count;})
+    .yAxis().ticks(5).tickFormat(function (v) { return (v / 1000) + "k"; });
+
+    
+lineChart
+    .width(800)
+    .height(400)
+    .dimension(durationDimension)
+    .group(deltaTimeTween)
+    .renderArea(true)
+    .transitionDuration(1000)
+    .rangeChart(selectorChart)
+    .elasticY(true)
+    .elasticX(true)
+    .brushOn(false)
+    .x(d3.scale.linear())
+    .keyAccessor(function(d){return d.key})
+    .valueAccessor(function(d){return d.value});
+    
+    
+    
+    
+//  chart
+//    .width(1280)
+//    .height(480)
+//    .dimension(durationDimension)
+//    .mouseZoomable(false)
+//    .rangeChart()  
+//    .x(d3.scale.linear())
+//    .brushOn(true)
+//    .yAxisLabel("Duration in milliseconds")
+//    .xAxisLabel("Time")
+//    .elasticY(true)
+//    .elasticX(true)
+//    
+//    .group(deltaTimeGroup)
+//    
+//    .seriesAccessor(function(d) {return "Duration";})
+//    .keyAccessor(function(d) {
+//        return d.key;
+//    })
+//    .valueAccessor(function(d) {return d.value.AverageDuration;})
+//    .stack(deltaTimeGroup, function(d){return d.value.MinimumDuration;})
+//    .turnOnControls(true);
+//    // .legend(dc.legend().x(700).y(300).itemHeight(13).gap(5));
+//  chart.yAxis().tickFormat(function(d) {return (d);});
+//  chart.margins().left += 40;
 
 // chart
 // .width(768)
