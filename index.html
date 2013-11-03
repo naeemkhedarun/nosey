@@ -24,32 +24,24 @@
 var selectorChart = dc.barChart("#range");
 var lineChart = dc.lineChart("#test");
                              
-//var chart = dc.barChart("#fluctuation-chart");
-
-var ndx, runDimension, runGroup;
+var requests, runDimension, runGroup;
 
 var dateParseFormat = d3.time.format("%Y-%m-%dT%X");
-//var dateOutputFormat = d3.time.format("%S");
 
-    
 d3.json("http://localhost:9200/log/iis/_search?sort=date:asc&size=400000",   function(error, experiments) {
 
     var startDate = dateParseFormat.parse(experiments.hits.hits[0]._source.Date);
+
+    requests = crossfilter(experiments.hits.hits),
+      all = requests.groupAll(),
+      duration = requests.dimension(function(d){return d._source.Duration;})
+      second = requests.dimension(function(d){return Math.round((dateParseFormat.parse(d._source.Date) - startDate) / 1000 / 60);}),
+      seconds = second.group(Math.floor),
+      time = requests.dimension(function(d){return (dateParseFormat.parse(d._source.Date) - startDate);}).group()
+      ;
+
     
-//dateFormat.parse(d.date), 
-  ndx = crossfilter(experiments.hits.hits);
-  
-    durationDimension = ndx.dimension(function(d) {
-      return d._source.Duration;
-  });
-    
-    deltaTimeTween = ndx.dimension(function(d){ return dateParseFormat.parse(d._source.Date) - startDate }).group();
-    
-    deltaTimeDuration = ndx.dimension(function(d){
-        return Math.round((dateParseFormat.parse(d._source.Date) - startDate) / 1000 / 60);
-    });
-    
-    deltaTimeGroup = deltaTimeDuration.group().reduce(
+    deltaTimeGroup = second.group().reduce(
         function(p,v){
             ++p.Count;
             p.TotalDuration += v._source.Duration
@@ -73,31 +65,37 @@ d3.json("http://localhost:9200/log/iis/_search?sort=date:asc&size=400000",   fun
 selectorChart.width(800)
     .height(80)
     .margins({top: 0, right: 50, bottom: 20, left: 40})
-    .dimension(durationDimension)
+    .dimension(all)
     .group(deltaTimeGroup)
-    .x(d3.scale.linear())
+    .x(d3.scale.linear().rangeRound([0, 60]))
     .centerBar(true)
     .gap(1)
     .elasticX(true)
     .keyAccessor(function(d){return d.key;})
     .valueAccessor(function(d) {return d.value.Count;})
-    .yAxis().ticks(5).tickFormat(function (v) { return (v / 1000) + "k"; });
+    .yAxis().ticks(5).tickFormat(function (v) { return (v / 1000) + "k"; })
+    ;
 
     
 lineChart
     .width(800)
     .height(400)
-    .dimension(durationDimension)
-    .group(deltaTimeTween)
+    .dimension(all)
+    .group(deltaTimeGroup)
     .renderArea(true)
     .transitionDuration(1000)
     .rangeChart(selectorChart)
     .elasticY(true)
-    .elasticX(true)
+    .mouseZoomable(true)
     .brushOn(false)
-    .x(d3.scale.linear())
-    .keyAccessor(function(d){return d.key})
-    .valueAccessor(function(d){return d.value});
+    .x(d3.time.scale().domain([0, 60]))
+    .keyAccessor(function(d){
+      return d.key;
+     })
+    .valueAccessor(function(d){
+      return d.value.AverageDuration;
+    })
+    ;
     
     
     
