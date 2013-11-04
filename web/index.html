@@ -8,13 +8,14 @@
 <body>
 
 <div id="test">
- <span class="reset" style="display: none;">Current filter: <span class="filter"></span></span>
- </div>
+</div>
     
 <div id="range">
-<span class="reset" style="display: none;">Current filter: <span class="filter"></span></span>
- </div>
-    
+</div>
+   
+<div id="status-codes">
+</div>
+
 <script type="text/javascript" src="components/d3.js"></script>
 <script type="text/javascript" src="components/crossfilter.js"></script>
 <script type="text/javascript" src="components/dc.js"></script>
@@ -23,44 +24,58 @@
 
 var selectorChart = dc.barChart("#range");
 var lineChart = dc.lineChart("#test");
-                             
+var statusCodeChart = dc.pieChart("#status-codes");       
+
 var requests, runDimension, runGroup;
 
 var dateParseFormat = d3.time.format("%Y-%m-%dT%X");
 
-d3.json("http://localhost:9200/log/iis/_search?sort=date:asc&size=400000",   function(error, experiments) {
+d3.json("http://localhost:9200/log/iis/_search?sort=date:asc&size=400000&fields=Date,Duration,Method,StatusCode",   function(error, experiments) {
 
-    var startDate = dateParseFormat.parse(experiments.hits.hits[0]._source.Date);
+    var startDate = dateParseFormat.parse(experiments.hits.hits[0].fields.Date);
 
     requests = crossfilter(experiments.hits.hits),
       all = requests.groupAll(),
-      duration = requests.dimension(function(d){return d._source.Duration;})
-      second = requests.dimension(function(d){return Math.round((dateParseFormat.parse(d._source.Date) - startDate) / 1000 / 60);}),
+      duration = requests.dimension(function(d){return d.fields.Duration;}),
+      statusCode = requests.dimension(function(d){return d.fields.StatusCode;}),
+      second = requests.dimension(function(d){return Math.round((dateParseFormat.parse(d.fields.Date) - startDate) / 1000 / 60);}),
       seconds = second.group(Math.floor),
-      time = requests.dimension(function(d){return (dateParseFormat.parse(d._source.Date) - startDate);}).group()
+      time = requests.dimension(function(d){return (dateParseFormat.parse(d.fields.Date) - startDate);}).group()
       ;
 
+    var statusCodeGroup = statusCode.group();
     
     deltaTimeGroup = second.group().reduce(
         function(p,v){
             ++p.Count;
-            p.TotalDuration += v._source.Duration
+            p.TotalDuration += v.fields.Duration
             p.AverageDuration = p.TotalDuration / p.Count;
-            p.MinimumDuration = Math.min(p.MinimumDuration, v._source.Duration)
-            p.MaximumDuration = Math.max(p.MaximumDuration, v._source.Duration)
+            p.MinimumDuration = Math.min(p.MinimumDuration, v.fields.Duration)
+            p.MaximumDuration = Math.max(p.MaximumDuration, v.fields.Duration)
             return p;
         }, function(p,v){
             --p.Count;
-            p.TotalDuration -= v._source.Duration
+            p.TotalDuration -= v.fields.Duration
             p.AverageDuration = p.TotalDuration / p.Count;
-            p.MinimumDuration = Math.min(p.MinimumDuration, v._source.Duration)
-            p.MaximumDuration = Math.max(p.MaximumDuration, v._source.Duration)
+            p.MinimumDuration = Math.min(p.MinimumDuration, v.fields.Duration)
+            p.MaximumDuration = Math.max(p.MaximumDuration, v.fields.Duration)
             return p;
         }, function(){
             return { TotalDuration:0, Count: 0, AverageDuration: 0, MaximumDuration: 0, MinimumDuration: 999999 };
         }
     );
   
+      maximumGroup = second.group().reduce(
+        function(p,v){
+            p.MaximumDuration = Math.max(p.MaximumDuration, v.fields.Duration)
+            return p;
+        }, function(p,v){
+            p.MaximumDuration = Math.max(p.MaximumDuration, v.fields.Duration)
+            return p;
+        }, function(){
+            return { MaximumDuration: 0 };
+        }
+    );
 
 selectorChart.width(800)
     .height(80)
@@ -80,6 +95,7 @@ selectorChart.width(800)
 lineChart
     .width(800)
     .height(400)
+    .margins({top: 0, right: 50, bottom: 20, left: 100})
     .dimension(all)
     .group(deltaTimeGroup)
     .renderArea(true)
@@ -92,12 +108,18 @@ lineChart
     .keyAccessor(function(d){
       return d.key;
      })
-    .valueAccessor(function(d){
-      return d.value.AverageDuration;
+    .valueAccessor(function(e){
+      return e.value.AverageDuration;
     })
+    .yAxis().tickFormat(function (v) { return (v) + "ms"; })
     ;
     
-    
+     statusCodeChart.width(180)
+        .height(180)
+        .radius(80)
+        .innerRadius(30)
+        .dimension(statusCode)
+        .group(statusCode.group().reduceCount(function(d){return Math.round((dateParseFormat.parse(d.fields.Date) - startDate) / 1000 / 60);}));
     
     
 //  chart
