@@ -12,11 +12,13 @@ namespace CSNosey.RealTimeImporters
     {
         private ElasticConnection _connection;
         private CompositeDisposable _disposable;
+        private JsonNetSerializer _serializer;
 
         public void Begin(ElasticConnection connection)
         {
             _connection = connection;
             _disposable = new CompositeDisposable();
+            _serializer = new JsonNetSerializer();
 
             var eventLogWatchers = new[] {"Application", "System"}.Select(s => new EventLogQuery(s, PathType.LogName)).Select(query => new EventLogWatcher(query));
 
@@ -28,16 +30,14 @@ namespace CSNosey.RealTimeImporters
             }
         }
 
-        public void EventLogEventRead(object obj,
-                                             EventRecordWrittenEventArgs arg)
+        public void EventLogEventRead(object obj, EventRecordWrittenEventArgs arg)
         {
             if (arg.EventRecord != null)
             {
                 var xmlDocument = new XmlDocument();
                 xmlDocument.LoadXml(arg.EventRecord.ToXml());
 
-                var serializer = new JsonNetSerializer();
-                var eventS = serializer.Serialize(new Event
+                var eventS = _serializer.Serialize(new Event
                     {
                         EventId = arg.EventRecord.Id, 
                         EventRecordId = arg.EventRecord.RecordId, 
@@ -46,7 +46,7 @@ namespace CSNosey.RealTimeImporters
                         Source = arg.EventRecord.ProviderName,
                         Date = arg.EventRecord.TimeCreated.Value.ToUniversalTime().ToString("dd/MM/yyyy HH:mm:ss"),
                         Level = arg.EventRecord.LevelDisplayName,
-                        MachineName = arg.EventRecord.MachineName
+                        MachineName = Environment.MachineName
                     });
                 _connection.Post(new IndexCommand("log", "event"), eventS);
             }

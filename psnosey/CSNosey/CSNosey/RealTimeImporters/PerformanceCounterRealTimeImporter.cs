@@ -30,7 +30,7 @@ namespace CSNosey.RealTimeImporters
                     {
                         var jsonData = new Counter
                             {
-                                MachineName = counter.MachineName, 
+                                MachineName = Environment.MachineName, 
                                 Name = string.Format("{0}/{1}/{2}", 
                                 counter.CategoryName, 
                                 counter.CounterName, counter.InstanceName), 
