@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reactive.Linq;
 using System.Threading;
-using CSNosey.Importers;
 using CSNosey.RealTimeImporters;
 using PlainElastic.Net;
 using Topshelf;
 
 namespace CSNosey
 {
-    class PutImportersOnTopshelf
+    internal class PutImportersOnTopshelf
     {
         private ElasticConnection _connection;
         private IList<IRealTimeImporter> _importers;
@@ -27,7 +24,7 @@ namespace CSNosey
                     new PerformanceCounterRealTimeImporter()
                 };
 
-            foreach (var realTimeImporter in _importers)
+            foreach (IRealTimeImporter realTimeImporter in _importers)
             {
                 realTimeImporter.Begin(_connection);
             }
@@ -35,34 +32,33 @@ namespace CSNosey
 
         public void Stop()
         {
-            foreach (var realTimeImporter in _importers)
+            foreach (IRealTimeImporter realTimeImporter in _importers)
             {
                 ((IDisposable) realTimeImporter).Dispose();
             }
-
         }
     }
 
     internal class Program
     {
-        private static AutoResetEvent block = new AutoResetEvent(false);
+        private static readonly AutoResetEvent block = new AutoResetEvent(false);
 
         private static void Main(string[] args)
         {
-            HostFactory.Run(x =>                                 //1
-            {
-                x.Service<PutImportersOnTopshelf>(s =>                        //2
+            HostFactory.Run(x =>
                 {
-                    s.ConstructUsing(name => new PutImportersOnTopshelf());     //3
-                    s.WhenStarted(tc => tc.Start());              //4
-                    s.WhenStopped(tc => tc.Stop());               //5
-                });
-                x.RunAsLocalSystem();                            //6
+                    x.Service<PutImportersOnTopshelf>(s =>
+                        {
+                            s.ConstructUsing(name => new PutImportersOnTopshelf());
+                            s.WhenStarted(tc => tc.Start());
+                            s.WhenStopped(tc => tc.Stop());
+                        });
+                    x.RunAsLocalSystem();
 
-                x.SetDescription("Collects machine data and pushes to elastic search");        //7
-                x.SetDisplayName("Nosey");                       //8
-                x.SetServiceName("Nosey");                       //9
-            });     
+                    x.SetDescription("Collects machine data and pushes to elastic search");
+                    x.SetDisplayName("Nosey");
+                    x.SetServiceName("Nosey");
+                });
 
 
 //            IObservable<DateTime> timeInterval =
@@ -83,4 +79,3 @@ namespace CSNosey
         }
     }
 }
-
