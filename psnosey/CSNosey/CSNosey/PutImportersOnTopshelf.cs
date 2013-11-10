@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using CSNosey.RealTimeImporters;
 using PlainElastic.Net;
+using Topshelf;
 
 namespace CSNosey
 {
@@ -9,10 +10,18 @@ namespace CSNosey
     {
         private ElasticConnection _connection;
         private IList<IRealTimeImporter> _importers;
+        private AutomaticUpdater _automaticUpdater;
 
-        public void Start()
+        public PutImportersOnTopshelf()
         {
-            _connection = new ElasticConnection("asnav-monitor-01");
+            _automaticUpdater = new AutomaticUpdater();
+        }
+
+        public bool Start(HostControl control)
+        {
+            _automaticUpdater.Start(control);
+
+            _connection = new ElasticConnection("localhost");
 
             Console.WriteLine(DateTime.Now);
 
@@ -26,6 +35,8 @@ namespace CSNosey
             {
                 realTimeImporter.Begin(_connection);
             }
+
+            return true;
         }
 
         public void Stop()
@@ -34,6 +45,8 @@ namespace CSNosey
             {
                 ((IDisposable) realTimeImporter).Dispose();
             }
+
+            _automaticUpdater.Stop();
         }
     }
 }
