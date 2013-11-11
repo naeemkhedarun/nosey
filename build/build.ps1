@@ -2,7 +2,8 @@ param(
         [Parameter(Mandatory=$true)]
         [ValidateSet("major", "minor", "patch")]
         [string]
-        $increment
+        $increment,
+        [switch]$release
         # [Parameter(Mandatory=$true)]
         # $releaseMessage
 )
@@ -11,14 +12,19 @@ param(
 
 $root = "$PSScriptRoot\.."
 
+msbuild "$root\psnosey\csnosey\csnosey.sln" /p:configuration=release /p:outdir="C:\js\release_nosey\releases\agent"
 
-
-msbuild "$root\psnosey\csnosey\csnosey.sln" /p:configuration=release /p:outdir="$root\releases\agent"
-
-push-location "$root\releases\agent"
+push-location "C:\js\release_nosey\releases\agent"
 Invoke-Semver $increment
 $version = Invoke-Semver -Format "v%M.%m.%p$s"
 Write-Host "Version is now:  $version."
-#git tag -a $version -m "First release of agent"
+
+if($release)
+{
+    git add . --force
+    git commit -m "Automated checkin for release $version."
+    git tag -a $version -m "Automated tagging for release $version."    
+}
+
 pop-location
 

@@ -39,7 +39,7 @@ namespace CSNosey
                             StopServiceForUpdating(control);
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         isProcessing = false;
                     }

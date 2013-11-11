@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
@@ -17,12 +18,12 @@ namespace CSNosey.RealTimeImporters
             
             var counters = new[]
                 {
-                    new PerformanceCounter("Processor", "% Processor Time", "_Total"),
-                    new PerformanceCounter("LogicalDisk", "% Free Space", "_Total"),
-                    new PerformanceCounter("Memory", "% Committed Bytes In Use"),
+                    new KeyValuePair<string, PerformanceCounter>("CpuTime", new PerformanceCounter("Processor", "% Processor Time", "_Total")),
+                    new KeyValuePair<string, PerformanceCounter>("FreeSpace", new PerformanceCounter("LogicalDisk", "% Free Space", "_Total")),
+                    new KeyValuePair<string, PerformanceCounter>("MemoryInUse", new PerformanceCounter("Memory", "% Committed Bytes In Use")),
                 };
 
-            counters.Select(counter => counter.NextValue());
+            counters.Select(counter => counter.Value.NextValue());
 
             _disposable = Observable.Interval(TimeSpan.FromSeconds(5)).Subscribe(l =>
                 {
@@ -31,10 +32,9 @@ namespace CSNosey.RealTimeImporters
                         var jsonData = new Counter
                             {
                                 MachineName = Environment.MachineName, 
-                                Name = string.Format("{0}/{1}/{2}", 
-                                counter.CategoryName, 
-                                counter.CounterName, counter.InstanceName), 
-                                Value = counter.NextValue(),
+                                Name = string.Format("{0}_{1}_{2}", counter.Value.CategoryName, counter.Value.CounterName, counter.Value.InstanceName),
+                                StatName = counter.Key,
+                                Value = counter.Value.NextValue(),
                                 Date = DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss")
                             };
 
@@ -48,9 +48,9 @@ namespace CSNosey.RealTimeImporters
             _disposable.Dispose();
         }
     }
-
     class Counter
     {
+        public string StatName { get; set; }
         public string MachineName { get; set; }
         public string Name { get; set; }
         public float Value { get; set; }
