@@ -3,22 +3,18 @@ using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Xml;
-using PlainElastic.Net;
-using PlainElastic.Net.Serialization;
 
 namespace CSNosey.RealTimeImporters
 {
     internal class EventLogRealTimeImporter : IRealTimeImporter, IDisposable
     {
-        private ElasticConnection _connection;
+        private IDbLogger _connection;
         private CompositeDisposable _disposable;
-        private JsonNetSerializer _serializer;
 
-        public void Begin(ElasticConnection connection)
+        public void Begin(IDbLogger connection)
         {
             _connection = connection;
             _disposable = new CompositeDisposable();
-            _serializer = new JsonNetSerializer();
 
             var eventLogWatchers = new[] {"Application", "System"}.Select(s => new EventLogQuery(s, PathType.LogName)).Select(query => new EventLogWatcher(query));
 
@@ -37,18 +33,19 @@ namespace CSNosey.RealTimeImporters
                 var xmlDocument = new XmlDocument();
                 xmlDocument.LoadXml(arg.EventRecord.ToXml());
 
-                var eventS = _serializer.Serialize(new Event
-                    {
-                        EventId = arg.EventRecord.Id, 
-                        EventRecordId = arg.EventRecord.RecordId, 
-                        LogName = arg.EventRecord.LogName, 
-                        Message = string.Join(Environment.NewLine, arg.EventRecord.Properties.Select(property => property.Value.ToString())), 
-                        Source = arg.EventRecord.ProviderName,
-                        Date = arg.EventRecord.TimeCreated.Value.ToUniversalTime().ToString("dd/MM/yyyy HH:mm:ss"),
-                        Level = arg.EventRecord.LevelDisplayName,
-                        MachineName = Environment.MachineName
-                    });
-                _connection.Post(new IndexCommand("log", "event"), eventS);
+                var @event = new Event
+                {
+                    EventId = arg.EventRecord.Id, 
+                    EventRecordId = arg.EventRecord.RecordId, 
+                    LogName = arg.EventRecord.LogName, 
+                    Message = string.Join(Environment.NewLine, arg.EventRecord.Properties.Select(property => property.Value.ToString())), 
+                    Source = arg.EventRecord.ProviderName,
+                    Date = arg.EventRecord.TimeCreated.Value.ToUniversalTime().ToString("dd/MM/yyyy HH:mm:ss"),
+                    Level = arg.EventRecord.LevelDisplayName,
+                    MachineName = Environment.MachineName
+                };
+
+                _connection.Log(@event);
             }
         }
 
@@ -58,7 +55,7 @@ namespace CSNosey.RealTimeImporters
         }
     }
 
-    class Event
+    public class Event
     {
         public string Date { get; set; }
         public string Message { get; set; }

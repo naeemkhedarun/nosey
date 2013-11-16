@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
-using PlainElastic.Net;
-using PlainElastic.Net.Serialization;
 
 namespace CSNosey.RealTimeImporters
 {
@@ -12,15 +10,13 @@ namespace CSNosey.RealTimeImporters
     {
         private IDisposable _disposable;
 
-        public void Begin(ElasticConnection connection)
+        public void Begin(IDbLogger connection)
         {
-            var serializer = new JsonNetSerializer();
-            
             var counters = new[]
                 {
                     new KeyValuePair<string, PerformanceCounter>("CpuTime", new PerformanceCounter("Processor", "% Processor Time", "_Total")),
                     new KeyValuePair<string, PerformanceCounter>("FreeSpace", new PerformanceCounter("LogicalDisk", "% Free Space", "_Total")),
-                    new KeyValuePair<string, PerformanceCounter>("MemoryInUse", new PerformanceCounter("Memory", "% Committed Bytes In Use")),
+                    new KeyValuePair<string, PerformanceCounter>("MemoryInUse", new PerformanceCounter("Memory", "% Committed Bytes In Use"))
                 };
 
             counters.Select(counter => counter.Value.NextValue());
@@ -38,7 +34,7 @@ namespace CSNosey.RealTimeImporters
                                 Date = DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss")
                             };
 
-                        connection.Post(new IndexCommand("counter", "machine"), serializer.Serialize(jsonData));
+                        connection.LogCounter(jsonData);
                     }
                 });
         }
@@ -48,7 +44,8 @@ namespace CSNosey.RealTimeImporters
             _disposable.Dispose();
         }
     }
-    class Counter
+
+    public class Counter
     {
         public string StatName { get; set; }
         public string MachineName { get; set; }

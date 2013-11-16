@@ -14,6 +14,11 @@ namespace CSNosey
 
         public bool Start(HostControl control)
         {
+            if (!bool.Parse(ConfigurationManager.AppSettings["automaticUpdate"]))
+            {
+                return true;
+            }
+
             var fileVersionString = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), ".semver"));
             _currentVersion = new SemVerReader(fileVersionString).GetVersion();
 
