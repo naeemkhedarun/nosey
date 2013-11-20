@@ -12,9 +12,9 @@ param(
 
 $root = "$PSScriptRoot\.."
 
-msbuild "$root\psnosey\csnosey\csnosey.sln" /p:configuration=release /p:outdir="C:\js\release_nosey\releases\agent"
+msbuild "$root\psnosey\csnosey\csnosey.sln" /p:configuration=release /p:outdir="C:\git\release_nosey\releases\agent"
 
-push-location "C:\js\release_nosey\releases\agent"
+push-location "C:\git\release_nosey\releases\agent"
 Invoke-Semver $increment
 $version = Invoke-Semver -Format "v%M.%m.%p$s"
 Write-Host "Version is now:  $version."

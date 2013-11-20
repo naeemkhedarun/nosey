@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using CSNosey.RealTimeImporters;
-using MongoDB.Driver;
-using PlainElastic.Net;
 using Topshelf;
 
 namespace CSNosey
@@ -11,7 +9,7 @@ namespace CSNosey
     {
         private IDbLogger _connection;
         private IList<IRealTimeImporter> _importers;
-        private AutomaticUpdater _automaticUpdater;
+        private readonly AutomaticUpdater _automaticUpdater;
 
         public PutImportersOnTopshelf()
         {
@@ -22,9 +20,7 @@ namespace CSNosey
         {
             _automaticUpdater.Start(control);
 
-//            _connection = new ElasticSearchDbLogger();
-            _connection = new MongoDbLogger();
-
+            _connection = new ElasticSearchDbLogger();
 
             Console.WriteLine(DateTime.Now);
 

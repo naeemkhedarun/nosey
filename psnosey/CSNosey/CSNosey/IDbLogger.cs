@@ -1,5 +1,7 @@
 using System;
+using System.Configuration;
 using CSNosey.RealTimeImporters;
+using Microsoft.Win32;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
@@ -23,7 +25,22 @@ namespace CSNosey
 
         public ElasticSearchDbLogger()
         {
-            _connection = new ElasticConnection("localhost");
+            var myKey = Registry.CurrentUser.OpenSubKey(@"Software\Nosey", false);
+            var missing = myKey == null;
+            var host = string.Empty;
+
+            if (!missing)
+            {
+                host = (String)myKey.GetValue("ElasticSearchHost");
+                missing = host == null;
+            }
+            
+            if (missing)
+            {
+                throw new ConfigurationErrorsException(@"Please define an elasticsearch host key at HKEY_LOCAL_MACHINE\SOFTWARE\Nosey called ElasticSearchHost with the machines hostname.");
+            }
+
+            _connection = new ElasticConnection(host);
             _serializer = new JsonNetSerializer();
 
         }
@@ -36,14 +53,22 @@ namespace CSNosey
 
         public void UpdateHeatbeat(string time)
         {
-            var serialize = _serializer.Serialize(DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss"));
-            _connection.Put(new IndexCommand("counter", "heartbeat", Environment.MachineName), serialize);
+            var beat = _serializer.Serialize(new ElasticHeartBeat { Date = DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss"), MachineName = Environment.MachineName });
+            _connection.Put(new IndexCommand("counter", "heartbeat", Environment.MachineName), beat);
         }
 
         public void LogCounter(Counter counter)
         {
             _connection.Post(new IndexCommand("counter", "machine"), _serializer.Serialize(counter));
         }
+
+    }
+
+    internal class ElasticHeartBeat
+    {
+        public string Date { get; set; }
+
+        public string MachineName { get; set; }
     }
 
     class MongoDbLogger : IDbLogger
