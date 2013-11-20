@@ -8,7 +8,13 @@ namespace CSNosey.RealTimeImporters
 {
     class PerformanceCounterRealTimeImporter : IRealTimeImporter, IDisposable
     {
+        private readonly ITime _time;
         private IDisposable _disposable;
+
+        public PerformanceCounterRealTimeImporter(ITime time)
+        {
+            _time = time;
+        }
 
         public void Begin(IDbLogger connection)
         {
@@ -31,7 +37,7 @@ namespace CSNosey.RealTimeImporters
                                 Name = string.Format("{0}_{1}_{2}", counter.Value.CategoryName, counter.Value.CounterName, counter.Value.InstanceName),
                                 StatName = counter.Key,
                                 Value = counter.Value.NextValue(),
-                                Date = DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss")
+                                Date = _time.Now
                             };
 
                         connection.LogCounter(jsonData);

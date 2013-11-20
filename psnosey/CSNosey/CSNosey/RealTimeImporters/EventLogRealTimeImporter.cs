@@ -8,8 +8,14 @@ namespace CSNosey.RealTimeImporters
 {
     internal class EventLogRealTimeImporter : IRealTimeImporter, IDisposable
     {
+        private readonly ITime _time;
         private IDbLogger _connection;
         private CompositeDisposable _disposable;
+
+        public EventLogRealTimeImporter(ITime time)
+        {
+            _time = time;
+        }
 
         public void Begin(IDbLogger connection)
         {
@@ -40,7 +46,7 @@ namespace CSNosey.RealTimeImporters
                     LogName = arg.EventRecord.LogName, 
                     Message = string.Join(Environment.NewLine, arg.EventRecord.Properties.Select(property => property.Value.ToString())), 
                     Source = arg.EventRecord.ProviderName,
-                    Date = arg.EventRecord.TimeCreated.Value.ToUniversalTime().ToString("dd/MM/yyyy HH:mm:ss"),
+                    Date = arg.EventRecord.TimeCreated.Value.ToUniversalTime().ToString(_time.Format),
                     Level = arg.EventRecord.LevelDisplayName,
                     MachineName = Environment.MachineName
                 };

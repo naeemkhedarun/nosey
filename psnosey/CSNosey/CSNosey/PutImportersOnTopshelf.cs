@@ -7,28 +7,28 @@ namespace CSNosey
 {
     internal class PutImportersOnTopshelf
     {
+        private readonly ITime _time;
         private IDbLogger _connection;
         private IList<IRealTimeImporter> _importers;
         private readonly AutomaticUpdater _automaticUpdater;
 
-        public PutImportersOnTopshelf()
+        public PutImportersOnTopshelf(ITime time)
         {
-            _automaticUpdater = new AutomaticUpdater();
+            _time = time;
+            _automaticUpdater = new AutomaticUpdater(time);
         }
 
         public bool Start(HostControl control)
         {
-            _automaticUpdater.Start(control);
+            _connection = new ElasticSearchDbLogger(_time);
 
-            _connection = new ElasticSearchDbLogger();
-
-            Console.WriteLine(DateTime.Now);
+            _automaticUpdater.Start(control, _connection);
 
             _importers = new List<IRealTimeImporter>
                 {
-                    new EventLogRealTimeImporter(),
-                    new PerformanceCounterRealTimeImporter(),
-                    new HeartBeatRealTimeImporter()
+                    new EventLogRealTimeImporter(_time),
+                    new PerformanceCounterRealTimeImporter(_time),
+                    new HeartBeatRealTimeImporter(_time)
                 };
 
             foreach (IRealTimeImporter realTimeImporter in _importers)

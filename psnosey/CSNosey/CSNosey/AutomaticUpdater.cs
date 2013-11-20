@@ -3,16 +3,23 @@ using System.Configuration;
 using System.IO;
 using System.Net;
 using System.Reactive.Linq;
+using CSNosey.RealTimeImporters;
 using Topshelf;
 
 namespace CSNosey
 {
     internal class AutomaticUpdater
     {
+        private readonly ITime _time;
         private Version _currentVersion;
         private IDisposable _disposable;
 
-        public bool Start(HostControl control)
+        public AutomaticUpdater(ITime time)
+        {
+            _time = time;
+        }
+
+        public bool Start(HostControl control, IDbLogger connection)
         {
             if (!bool.Parse(ConfigurationManager.AppSettings["automaticUpdate"]))
             {
@@ -37,6 +44,18 @@ namespace CSNosey
                         
                         if (newVersion > _currentVersion)
                         {
+                            connection.Log(new Event
+                                {
+                                    Date = _time.Now,
+                                    EventId = 5384,
+                                    EventRecordId = 5384,
+                                    LogName = "Application",
+                                    Message = string.Format("Upgrading from {0} to {1}...", _currentVersion, newVersion),
+                                    Source = "Nosey",
+                                    MachineName = Environment.MachineName,
+                                    Level = "Information"
+                                });
+
                             var updatePackage = new UpdatePackage(newVersion);
                             updatePackage.GetAndUnpackLatestVersion();
                             updatePackage.ReplaceUpdateScript();

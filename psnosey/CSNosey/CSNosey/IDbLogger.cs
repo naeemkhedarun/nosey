@@ -20,11 +20,13 @@ namespace CSNosey
 
     class ElasticSearchDbLogger : IDbLogger
     {
+        private readonly ITime _time;
         private ElasticConnection _connection;
         private JsonNetSerializer _serializer;
 
-        public ElasticSearchDbLogger()
+        public ElasticSearchDbLogger(ITime time)
         {
+            _time = time;
             var myKey = Registry.CurrentUser.OpenSubKey(@"Software\Nosey", false);
             var missing = myKey == null;
             var host = string.Empty;
@@ -32,6 +34,7 @@ namespace CSNosey
             if (!missing)
             {
                 host = (String)myKey.GetValue("ElasticSearchHost");
+                myKey.Dispose();
                 missing = host == null;
             }
             
@@ -53,7 +56,7 @@ namespace CSNosey
 
         public void UpdateHeatbeat(string time)
         {
-            var beat = _serializer.Serialize(new ElasticHeartBeat { Date = DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss"), MachineName = Environment.MachineName });
+            var beat = _serializer.Serialize(new ElasticHeartBeat { Date = _time.Now, MachineName = Environment.MachineName });
             _connection.Put(new IndexCommand("counter", "heartbeat", Environment.MachineName), beat);
         }
 

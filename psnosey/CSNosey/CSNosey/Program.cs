@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading;
+﻿using CSNosey.RealTimeImporters;
 using Topshelf;
 
 namespace CSNosey
@@ -12,9 +9,11 @@ namespace CSNosey
         {
             HostFactory.Run(x =>
             {
+                var time = new Time();
+
                 x.Service<PutImportersOnTopshelf>(s =>
                     {
-                        s.ConstructUsing(name => new PutImportersOnTopshelf());
+                        s.ConstructUsing(name => new PutImportersOnTopshelf(time));
                         s.WhenStarted((topshelf, control) => topshelf.Start(control));
                         s.WhenStopped(tc => tc.Stop());
                     });
@@ -25,21 +24,6 @@ namespace CSNosey
                 x.SetDisplayName("Nosey");
                 x.SetServiceName("Nosey");
             });
-            
-
-//            IObservable<DateTime> timeInterval =
-//                Observable.Interval(TimeSpan.FromSeconds(1)).Select(l => DateTime.Now).Delay(TimeSpan.FromSeconds(10));
-
-//            IImporter eventLogImporter = new EventLogImporter(connection);
-
-//            using (timeInterval.Subscribe(eventLogImporter.Import))
-//            {
-//                Console.WriteLine("Press any key to unsubscribe");
-//                Console.ReadKey();
-//            }
-
-//            Console.WriteLine(DateTime.Now);
-//            Console.WriteLine("exit");
         }
     }
 }
