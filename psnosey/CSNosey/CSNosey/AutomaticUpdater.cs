@@ -60,7 +60,8 @@ namespace CSNosey
 
         public bool Stop()
         {
-            _disposable.Dispose();
+            if (_disposable != null)
+                _disposable.Dispose();
             return true;
         }
     }
