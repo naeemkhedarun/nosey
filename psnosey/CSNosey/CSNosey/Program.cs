@@ -16,6 +16,7 @@ namespace CSNosey
                         s.ConstructUsing(name => new PutImportersOnTopshelf(time));
                         s.WhenStarted((topshelf, control) => topshelf.Start(control));
                         s.WhenStopped(tc => tc.Stop());
+                        x.StartAutomatically(); 
                     });
 
                 x.RunAsLocalService();

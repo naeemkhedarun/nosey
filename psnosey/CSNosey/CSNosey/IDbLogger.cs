@@ -1,11 +1,9 @@
 using System;
 using System.Configuration;
 using CSNosey.RealTimeImporters;
-using Microsoft.Win32;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
-using MongoDB.Driver.Linq;
 using PlainElastic.Net;
 using PlainElastic.Net.Serialization;
 
@@ -27,20 +25,11 @@ namespace CSNosey
         public ElasticSearchDbLogger(ITime time)
         {
             _time = time;
-            var myKey = Registry.CurrentUser.OpenSubKey(@"Software\Nosey", false);
-            var missing = myKey == null;
-            var host = string.Empty;
-
-            if (!missing)
-            {
-                host = (String)myKey.GetValue("ElasticSearchHost");
-                myKey.Dispose();
-                missing = host == null;
-            }
+            var host = Environment.GetEnvironmentVariable("ElasticSearchHost");
             
-            if (missing)
+            if (string.IsNullOrEmpty(host))
             {
-                throw new ConfigurationErrorsException(@"Please define an elasticsearch host key at HKEY_LOCAL_MACHINE\SOFTWARE\Nosey called ElasticSearchHost with the machines hostname.");
+                throw new ConfigurationErrorsException(@"Please define an environment variable of ElasticSearchHost with the hostname of your ES server.");
             }
 
             _connection = new ElasticConnection(host);
