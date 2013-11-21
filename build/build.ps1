@@ -12,19 +12,24 @@ param(
 
 $root = "$PSScriptRoot\.."
 
-msbuild "$root\psnosey\csnosey\csnosey.sln" /p:configuration=release /p:outdir="C:\git\release_nosey\releases\agent"
+try {
+    msbuild "$root\psnosey\csnosey\csnosey.sln" /p:configuration=release /p:outdir="C:\git\release_nosey\releases\agent"
 
-push-location "C:\git\release_nosey\releases\agent"
-Invoke-Semver $increment
-$version = Invoke-Semver -Format "v%M.%m.%p$s"
-Write-Host "Version is now:  $version."
+    push-location "C:\git\release_nosey\releases\agent"
+    Invoke-Semver $increment
+    $version = Invoke-Semver -Format "v%M.%m.%p$s"
+    Write-Host "Version is now:  $version."
 
-if($release)
-{
-    git add . --force
-    git commit -m "Automated checkin for release $version."
-    git tag -a $version -m "Automated tagging for release $version."    
+    if($release)
+    {
+        git add . --force
+        git commit -m "Automated checkin for release $version."
+        git tag -a $version -m "Automated tagging for release $version."    
+    }
+
+    pop-location
+
 }
-
-pop-location
-
+catch {
+    throw;
+}

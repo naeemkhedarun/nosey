@@ -39,19 +39,37 @@ namespace CSNosey
 
         public void Log(Event @event)
         {
-            var eventS = _serializer.Serialize(@event);
-            _connection.Post(new IndexCommand("log", "event"), eventS);
+            try
+            {
+                var eventS = _serializer.Serialize(@event);
+                _connection.Post(new IndexCommand("log", "event"), eventS);
+            }
+            catch (Exception)
+            {
+            }
         }
 
         public void UpdateHeatbeat(string time)
         {
-            var beat = _serializer.Serialize(new ElasticHeartBeat { Date = _time.Now, MachineName = Environment.MachineName });
-            _connection.Put(new IndexCommand("counter", "heartbeat", Environment.MachineName), beat);
+            try
+            {
+                var beat = _serializer.Serialize(new ElasticHeartBeat { Date = _time.Now, MachineName = Environment.MachineName });
+                _connection.Put(new IndexCommand("counter", "heartbeat", Environment.MachineName), beat);
+            }
+            catch (Exception)
+            {
+            }
         }
 
         public void LogCounter(Counter counter)
         {
-            _connection.Post(new IndexCommand("counter", "machine"), _serializer.Serialize(counter));
+            try
+            {
+                _connection.Post(new IndexCommand("counter", "machine"), _serializer.Serialize(counter));
+            }
+            catch (Exception)
+            {
+            }
         }
 
     }
