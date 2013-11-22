@@ -1,0 +1,7 @@
+<ul>
+    <li ng-repeat="item in results">
+        {{item.fields.Date}} - {{item.fields.MachineName}} - {{item.fields.StatName}} - {{item.fields.Value}}
+    </li>
+</ul>
+
+<graph bind="results"/>
