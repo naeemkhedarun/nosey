@@ -28,3 +28,41 @@
   content: "";
   padding: 0;
 }
+
+
+/* gantt */
+.gantt {
+    height: 500px; 
+    width:100%;
+    margin-top:2em;
+}
+
+.chart {
+	font-size: 13px;
+}
+
+.axis path,.axis line {
+	fill: none;
+	stroke: #aaa;
+	shape-rendering: crispEdges;
+}
+
+.bar {
+	fill: #2e8bcc;
+}
+
+.bar-failed {
+	fill: #CC0000;
+}
+
+.bar-running {
+	fill: #ccc;
+}
+
+.bar-succeeded {
+	fill: #33b5e5;
+}
+
+.bar-killed {
+	fill: #ffbb33;
+}
