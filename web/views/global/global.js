@@ -1,4 +1,6 @@
-angular.module('myApp.controllers').controller('AppController', function ($scope) {
+angular.module('myApp.controllers').controller('AppController', function ($scope, $location) {
+    
+    $scope.unsafeDeploymentId = $location.search().deploymentId;
     
     $scope.$watch("unsafeDeploymentId", function (changed) {
         if (changed) {

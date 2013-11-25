@@ -2,7 +2,7 @@ angular.module('myApp.controllers', []).
 controller('MyCtrl1',
     function ($scope, ejsResource) {
 
-        var ejs = ejsResource('http://localhost:9200');
+        var ejs = ejsResource('http://asnav-monitor-01:9200');
 
         $scope.results = []
         $scope.duration = 0;
@@ -18,7 +18,7 @@ controller('MyCtrl1',
                         .types("profiling")
                         .query(ejs.MatchQuery("deploymentId", deploymentId))
                         .sort("start", "asc")
-                        .fields(["start", "end", "MachineName", "deploymentId", "type"])
+                        .fields(["start", "end", "MachineName", "deploymentId", "type", "typeName", "packageName", "handler", "stage"])
                         .size(1000)
                         .doSearch(function (result) {
                             for (var i = $scope.results.length; i < result.hits.hits.length; i++) {
@@ -26,18 +26,30 @@ controller('MyCtrl1',
 
                                 item.fields.start = moment(item.fields.start, "DD/MM/YYYY hh:mm:ss").toDate();
                                 item.fields.end = moment(item.fields.end, "DD/MM/YYYY hh:mm:ss").toDate();
-                                item.fields.name = item.fields.MachineName;
+                                
+                                if(item.fields.MachineName)
+                                {
+                                    item.fields.name = item.fields.MachineName;    
+                                    item.fields.type = "package"
+                                }
+                                else
+                                {
+                                    item.fields.name = item.fields.stage;   
+                                    item.fields.type = "scope"
+                                }
+                                
                                 item.fields.status = item.fields.type;
 
                                 $scope.results.push(item);
-                                
-                                
                                 
                                 $scope.$broadcast("profiling", {
                                     new: item
                                 })
                             }
-                            $scope.duration = moment.duration($scope.results[$scope.results.length-1].fields.end - $scope.results[0].fields.start).humanize()
+                            if($scope.results.length > 0) {
+                                $scope.duration = moment.duration($scope.results[$scope.results.length-1].fields.end - $scope.results[0].fields.start).humanize()    
+                            }
+                            
                         });
                 }).subscribe();
             } else {

@@ -19,7 +19,7 @@ config(['$routeProvider', function($routeProvider) {
 angular.module('myApp.controllers', [])
     .controller('MyCtrl2',
         function () {
-
+            
         })
     ;
 
@@ -30,7 +30,11 @@ angular.module('myApp.filters', []).
     return function(text) {
       return String(text).replace(/\%VERSION\%/mg, version);
     }
-  }]);
+  }]).filter('reverse', function() {
+  return function(items) {
+    return items.slice().reverse();
+  };
+});;
 
 
 angular.module('myApp.services', []).
