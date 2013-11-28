@@ -1,4 +1,4 @@
-angular.module('myApp.controllers', []).
+angular.module('myApp.controllers').
 controller('GanttController',
     function ($scope, ejsResource) {
 

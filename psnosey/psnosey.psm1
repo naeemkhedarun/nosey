@@ -15,7 +15,7 @@ function Install-ESTypes
     $mapping = @{ profiling = @{ properties = @{ "start" = $date; "end" = $date; "deploymentId" = @{ "type" = "string"; "index" = "not_analyzed"; } } } }
     Invoke-RestMethod -Method PUT -Uri "http://$searchServer:9200/deploy/profiling/_mapping" -Body (ConvertTo-Json $mapping -Depth 99 -Compress)
 
-    $mapping = @{ detail = @{ properties = @{ "deploymentId" = @{ "type" = "string"; "index" = "not_analyzed"; } } } }
+    $mapping = @{ detail = @{ properties = @{ "deploymentId" = @{ "type" = "string"; "index" = "not_analyzed"; }; "date" = $date } } }
     Invoke-RestMethod -Method PUT -Uri "http://$searchServer:9200/deploy/detail/_mapping" -Body (ConvertTo-Json $mapping -Depth 99 -Compress)
 }
 
