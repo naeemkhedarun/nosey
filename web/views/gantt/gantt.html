@@ -1,4 +1,10 @@
-<h3>Total Duration: {{duration}}</h3>
+<div class="row-fluid">
+    <div class="alert alert-info">
+        <span>Deploying to {{detail.environment}}</span>
+        <span>- Total Duration: {{duration}}</span>
+        <span>- from {{detail.sourceBranches}}</span>
+    </div>
+</div>
 
 <div id="gantt" class="gantt" gantt></div>
 

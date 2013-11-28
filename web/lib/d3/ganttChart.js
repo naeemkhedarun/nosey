@@ -197,12 +197,15 @@ d3.gantt = function (element, elementId) {
 
         rect.on("mouseover", function (d) {
             tooltip.text(d.fields.typeName + " for " + d.fields.packageName);
+            setTimeout(function(){
+                tooltip.style("visibility", "hidden");
+            }, 3000);
             return tooltip.style("visibility", "visible");
         })
-            .on("mousemove", function () {
+        .on("mousemove", function () {
             return tooltip.style("top", (event.pageY - 10) + "px").style("left", (event.pageX + 10) + "px");
         })
-            .on("mouseout", function (d) {
+        .on("mouseout", function (d) {
             return tooltip.style("visibility", "hidden");
         });
 

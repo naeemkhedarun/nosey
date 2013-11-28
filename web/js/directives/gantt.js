@@ -43,15 +43,6 @@ angular.module('myApp.directives').directive("gantt", function () {
                 "extension" : "bar-running"
             };
 //            
-            var taskNames = [ "asnav-sql-08-01", 
-                             "asnav-sql-08-02", 
-                             "asnav-web-08a", 
-                             "asnav-web-08b", 
-                             "asnav-app-08a", 
-                             "asnav-app-08b", 
-                             "asnav-app-08c",
-                            "asnav-boweb-08"];
-//            
 //            tasks.sort(function(a, b) {
 //                return a.end - b.end;
 //            });
@@ -64,11 +55,12 @@ angular.module('myApp.directives').directive("gantt", function () {
             var format = "%H:%M";
 //            var timeDomainString = "1day";
             
-            $scope.gantt = d3.gantt(element, attrs.id).taskTypes(taskNames).taskStatus(taskStatus).tickFormat(format);
-            $scope.gantt.timeDomainMode("fixed");
+              
+            $scope.$on("detail", function(e, args){
+                $scope.gantt = d3.gantt(element, attrs.id).taskTypes(args.servers).taskStatus(taskStatus).tickFormat(format);
+                $scope.gantt.timeDomainMode("fixed");
+            });
             
-//                    
-//                    
             $scope.tasks = [];
             
             $scope.addTask = function(item) {
@@ -112,6 +104,8 @@ angular.module('myApp.directives').directive("gantt", function () {
                     d3.select("svg").remove();
                 }
             })
+          
+            
             
 //            scope.$parent.$watch('results', function (data) {
 //                console.log(data);
