@@ -1,42 +1,39 @@
 angular.module('myApp.controllers').
 controller('EnvironmentController',
-    function ($scope, ejsResource) {
-
-        var ejs = ejsResource('http://asnav-monitor-01:9200');
+    function ($scope, $http) {
 
         $scope.environments = {}
         
-        ejs.Request()
-            .indices("deploy")
-            .types("detail")
-            .sort("date", "asc")
-            .fields(["deploymentId", "environment", "servers", "packages", "sourceBranches", "date"])
-            .doSearch(function (result) {
+        $http({method: 'GET', url: 'http://asnav-monitor-01:9200/deploy/detail/_search?q=isLatest:true&size=200'}).
+          success(function(result, status, headers, config) {
+            for(var i = 0; i < result.hits.hits.length; i++) {
+                var detail = result.hits.hits[i]._source;
                 
-                for(var i = 0; i < result.hits.hits.length; i++) {
-                    var detail = result.hits.hits[i];
+                if(!(detail.environment in $scope.environments)){
+                    $scope.environments[detail.environment] = {
+                        environment: detail.environment,
+                        deploymentId: detail.deploymentId,
+                        servers: detail.servers.value,
+                        sourceBranches: detail.sourceBranches,
+                        date: moment(detail.date, "dd/MM/yyyy HH:mm:ss")
+                    };
+                }else{
                     
-                    if(!(detail.fields.environment in $scope.environments)){
-                        $scope.environments[detail.fields.environment] = {
-                            environment: detail.fields.environment,
-                            deploymentId: detail.fields.deploymentId,
-                            servers: detail.fields.servers.value,
-                            sourceBranches: detail.fields.sourceBranches,
-                            date: moment(detail.fields.date, "dd/MM/yyyy HH:mm:ss")
-                        };
-                    }else{
-                        
-                        if($scope.environments[detail.fields.environment].date < moment(detail.fields.date, "dd/MM/yyyy HH:mm:ss")){
-                            $scope.environments[detail.fields.environment] = {
-                                environment: detail.fields.environment,
-                                deploymentId: detail.fields.deploymentId,
-                                servers: detail.fields.servers.value,
-                                sourceBranches: detail.fields.sourceBranches,
-                                date: moment(detail.fields.date, "dd/MM/yyyy HH:mm:ss")
-                            }
+                    if($scope.environments[detail.environment].date < moment(detail.date, "dd/MM/yyyy HH:mm:ss")){
+                        $scope.environments[detail.environment] = {
+                            environment: detail.environment,
+                            deploymentId: detail.deploymentId,
+                            servers: detail.servers.value,
+                            sourceBranches: detail.sourceBranches,
+                            date: moment(detail.date, "dd/MM/yyyy HH:mm:ss")
                         }
                     }
                 }
-                
-            });
+            }
+          }).
+          error(function(data, status, headers, config) {
+            // called asynchronously if an error occurs
+            // or server returns response with an error status.
+          });
+        
     });

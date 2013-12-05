@@ -10,11 +10,13 @@ angular.module('myApp.controllers').controller('AppController', function ($scope
             var result = str.match(patt1);
             if (result) {
                 $scope.deploymentId = result[0];
+                $location.search({deploymentId: result[0]});
             } else {
                 $scope.deploymentId = "";
             }
         } else {
             $scope.deploymentId = "";
+            $location.search({deploymentId: ""});
         }
 
     });

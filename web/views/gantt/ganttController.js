@@ -1,97 +1,132 @@
 angular.module('myApp.controllers').
-controller('GanttController',
-    function ($scope, ejsResource) {
+controller('GanttController', function ($scope, ejsResource, $http) {
 
-        var ejs = ejsResource('http://asnav-monitor-01:9200');
+    var ejs = ejsResource('http://asnav-monitor-01:9200');
 
-        $scope.lookup = {}
-        $scope.results = []
-        
-        $scope.duration = 0;
-        
-        $scope.$parent.$watch("deploymentId", function (deploymentId) {
-            if (deploymentId) {
-                if ($scope.subscription == null) {
-                    //                   $scope.results.splice($scope.results.length);
+    $scope.lookup = {}
+    $scope.results = []
+    $scope.duration = 0;
+    $scope.isComplete = false;
+
+    $scope.$parent.$watch("deploymentId", function (deploymentId) {
+        if (deploymentId) {
+            
+            ejs.Request()
+                .indices("deploy")
+                .types("detail")
+                .query(ejs.MatchQuery("deploymentId", deploymentId))
+                .fields(["deploymentId", "environment", "servers", "packages", "sourceBranches", "isLatest"])
+                .doSearch(function (result) {
+
+                if (result.hits.hits.length > 0) {
+                    var detail = result.hits.hits[0];
+                    detail.fields.servers.push("Scope")
+                    $scope.detail = {
+                        environment: detail.fields.environment,
+                        deploymentId: detail.fields.deploymentId,
+                        servers: detail.fields.servers,
+                        sourceBranches: detail.fields.sourceBranches
+                    }
+
+                    $scope.$broadcast("detail", $scope.detail)
                 }
-                
+
+            });
+
+            $scope.subscription = Rx.Observable.timer(200, 2000).select(function () {
                 ejs.Request()
                     .indices("deploy")
-                    .types("detail")
+                    .types("profiling")
                     .query(ejs.MatchQuery("deploymentId", deploymentId))
-                    .fields(["deploymentId", "environment", "servers", "packages", "sourceBranches"])
+                    .sort("start", "asc")
+                    .fields(["start", "end", "MachineName", "deploymentId", "type", "typeName", "packageName", "handler", "stage"])
+                    .size(2000)
                     .doSearch(function (result) {
-                        
-                        if(result.hits.hits.length > 0){
-                            var detail = result.hits.hits[0];
-                            
-                            $scope.detail = {
-                                environment: detail.fields.environment,
-                                deploymentId: detail.fields.deploymentId,
-                                servers: detail.fields.servers.value,
-                                sourceBranches: detail.fields.sourceBranches
+
+                    for (var i = 0; i < result.hits.hits.length; i++) {
+
+                        var item = result.hits.hits[i]
+                        var id = item._id;
+                        if (!(id in $scope.lookup)) {
+                            item.fields.start = moment(item.fields.start, "DD/MM/YYYY hh:mm:ss").toDate();
+                            item.fields.end = moment(item.fields.end, "DD/MM/YYYY hh:mm:ss").add('s', 0).toDate();
+
+                            if (item.fields.MachineName) {
+                                item.fields.name = item.fields.MachineName;
+
+                                item.fields.status = item.fields.type;
+                                $scope.lookup[id] = item;
+                                $scope.results.push(item);
+
+                                item.redraw = i === (result.hits.hits.length - 1)
+
+                                $scope.$broadcast("profiling", {
+                                    new: item
+                                })
                             }
-                            
-                            $scope.$broadcast("detail", $scope.detail)
                         }
-                        
-                    });
-                
-                $scope.subscription = Rx.Observable.timer(200, 2000).select(function () {
-                    return ejs.Request()
-                        .indices("deploy")
-                        .types("profiling")
-                        .query(ejs.MatchQuery("deploymentId", deploymentId))
-                        .sort("start", "asc")
-                        .fields(["start", "end", "MachineName", "deploymentId", "type", "typeName", "packageName", "handler", "stage"])
-                        .size(1000)
-                        .doSearch(function (result) {
-                            
-                            for (var i = 0; i < result.hits.hits.length; i++) {
-                                
-                                var item = result.hits.hits[i]
-                                var id = item._id;
-                                if(!(id in $scope.lookup))
-                                {
-                                    item.fields.start = moment(item.fields.start, "DD/MM/YYYY hh:mm:ss").toDate();
-                                    item.fields.end = moment(item.fields.end, "DD/MM/YYYY hh:mm:ss").toDate();
-                                    
-                                    if(item.fields.MachineName)
-                                    {
-                                        item.fields.name = item.fields.MachineName;    
-                                        item.fields.type = "package"
-    
-                                        item.fields.status = item.fields.type;
-                                        $scope.lookup[id] = item;
-                                        $scope.results.push(item);
-                                        
-                                        $scope.$broadcast("profiling", {
-                                            new: item
-                                        })
-                                    }
-                                    else
-                                    {
-                                        item.fields.name = item.fields.stage;   
-                                        item.fields.type = "scope"
-                                    }
-                                }
+                    }
+                    if ($scope.results.length > 0) {
+                        $scope.duration = moment.duration($scope.results[$scope.results.length - 1].fields.end - $scope.results[0].fields.start).humanize()
+                    }
+
+                });
+
+                $http({
+                    method: 'GET',
+                    url: 'http://asnav-monitor-01:9200/deploy/profiling/_search?size=100&q=stage:* AND deploymentId:' + deploymentId
+                }).
+                success(function (result, status, headers, config) {
+                    for (var i = 0; i < result.hits.hits.length; i++) {
+                        var detail = result.hits.hits[i];
+                        var id = detail._id;
+                        if (!(id in $scope.lookup)) {
+                            detail.fields = {
+                                name: "Scope",
+                                type: "package",
+                                start: moment(detail._source.start, "DD/MM/YYYY hh:mm:ss").toDate(),
+                                end: moment(detail._source.end, "DD/MM/YYYY hh:mm:ss").toDate(),
+                                typeName: detail._source.stage,
+                                status: detail._source.stage,
+                                packageName: "asdf"
                             }
-                            if($scope.results.length > 0) {
-                                $scope.duration = moment.duration($scope.results[$scope.results.length-1].fields.end - $scope.results[0].fields.start).humanize()    
+                            $scope.lookup[id] = detail;
+
+                            detail.redraw = i === (result.hits.hits.length - 1)
+
+                            $scope.$broadcast("profiling", {
+                                new: detail
+                            })
+
+                            switch (detail.fields.typeName) {
+                                case "Invoke-BeforeDeploymentSteps":
+                                    $scope.startTime = detail.fields.start;
+                                    break;
+                                case "Invoke-AfterDeploymentSteps":
+                                    $scope.endTime = detail.fields.end;
+                                    $scope.isComplete = true;
+                                    $scope.subscription.dispose();
+                                    break;   
                             }
-                            
-                        });
-                }).subscribe();
-            } else {
-                if ($scope.subscription) {
-                    $scope.subscription.dispose();
-                    $scope.subscription = null;
-                    $scope.results.splice(0, $scope.results.length);
-                    $scope.$broadcast("profiling", {
-                        clear: true
-                    })
-                    $scope.duration = 0;
-                }
+                        }
+
+                    }
+                }).
+                error(function (data, status, headers, config) {
+                    // called asynchronously if an error occurs
+                    // or server returns response with an error status.
+                });
+            }).subscribe();
+        } else {
+            if ($scope.subscription) {
+                $scope.subscription.dispose();
+                $scope.subscription = null;
+                $scope.results.splice(0, $scope.results.length);
+                $scope.$broadcast("profiling", {
+                    clear: true
+                })
+                $scope.duration = 0;
             }
-        })
-    });
+        }
+    })
+});

@@ -26,3 +26,29 @@ function Import-Log
     $importer = "$PSScriptRoot\CSNosey\CSNosey\bin\Release\CSNosey.exe"
     & $importer $location
 }
+
+function Install-DeployDetailMapping
+{
+    $searchServer = "asnav-monitor-01"
+
+    $date = @{ type = "date"; format = "dd/MM/yyyy HH:mm:ss" }
+    $not_analyzed_string = @{ type = "string"; index = "not_analyzed" }
+    $analyzed_string = @{ type = "string"; }
+ 
+    $mapping = @{ 
+        detail = @{ 
+            properties = @{ 
+                "deploymentId" = $not_analyzed_string; 
+                "date" = $date;  
+                "start" = $date;
+                "end" = $date;
+                "servers" = $analyzed_string;
+                "packages" = $analyzed_string;
+                "environment" = $analyzed_string;
+                "sourceBranches" = $analyzed_string;
+            } 
+        } 
+    }
+
+    Invoke-RestMethod -Method PUT -Uri ("http://{0}:9200/deploy/detail/_mapping" -f $searchServer) -Body (ConvertTo-Json $mapping -Depth 99 -Compress)
+}

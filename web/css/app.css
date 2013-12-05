@@ -47,8 +47,33 @@
 	shape-rendering: crispEdges;
 }
 
-.bar {
-	fill: #2e8bcc;
+/* http://colorschemedesigner.com/#4e62PllBRK5HO */
+.bar-feature {
+	fill: #6A4FC1;
+}
+
+.bar-extension {
+	fill: #FF5555;
+}
+
+.bar-Invoke-BeforeDeploymentSteps {
+	fill: #B7F3B7;
+}
+
+.bar-Invoke-PackagePreDeploymentSteps {
+	fill: #8AF38A;
+}
+
+.bar-Invoke-PackageDeploymentSteps {
+	fill: #48D748;
+}
+
+.bar-Invoke-PackagePostDeploymentSteps {
+	fill: #FFEC91;
+}
+
+.bar-Invoke-AfterDeploymentSteps {
+	fill: #FFF4C0;
 }
 
 .bar-failed {

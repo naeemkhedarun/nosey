@@ -15,9 +15,8 @@ d3.gantt = function (element, elementId) {
     };
     var timeDomainStart = d3.time.day.offset(new Date(), -3);
     var timeDomainEnd = d3.time.hour.offset(new Date(), +3);
-    var timeDomainMode = FIT_TIME_DOMAIN_MODE; // fixed or fit
-    var taskTypes = [];
-    var taskStatus = [];
+    var timeDomainMode = FIXED_TIME_DOMAIN_MODE; // fixed or fit
+    var taskTypes = [];    
     var width = (element[0].clientWidth - margin.right - margin.left - 5); //document.body.clientHeight - margin.top - margin.bottom-5;
     var height = (element[0].clientHeight - margin.top - margin.bottom - 5); //document.body.clientWidth - margin.right - margin.left-5;
 
@@ -28,11 +27,11 @@ d3.gantt = function (element, elementId) {
     };
 
     var rectTransform = function (d) {
-        if (d.fields.type === "package") {
+//        if (d.fields.type === "package") {
             return "translate(" + x(d.fields.start) + "," + y(d.fields.name) + ")";
-        } else {
-            return "translate(" + x(d.fields.start) + "," + 0 + ")";
-        }
+//        } else {
+//            return "translate(" + x(d.fields.start) + "," + 0 + ")";
+//        }
 
 
     };
@@ -46,7 +45,7 @@ d3.gantt = function (element, elementId) {
 
     var yAxis = d3.svg.axis().scale(y).orient("left").tickSize(0);
 
-    var initTimeDomain = function () {
+    var initTimeDomain = function (tasks) {
         if (timeDomainMode === FIT_TIME_DOMAIN_MODE) {
             if (tasks === undefined || tasks.length < 1) {
                 timeDomainStart = d3.time.day.offset(new Date(), -3);
@@ -75,7 +74,7 @@ d3.gantt = function (element, elementId) {
 
     function gantt(tasks, element) {
 
-        initTimeDomain();
+        //initTimeDomain();
         initAxis();
 
 
@@ -97,10 +96,7 @@ d3.gantt = function (element, elementId) {
             .attr("rx", 1)
             .attr("ry", 1)
             .attr("class", function (d) {
-            if (taskStatus[d.fields.status] == null) {
-                return "bar";
-            }
-            return taskStatus[d.fields.status];
+                return "bar-" + d.fields.status;
         })
             .attr("y", 0)
             .attr("transform", rectTransform)
@@ -129,14 +125,14 @@ d3.gantt = function (element, elementId) {
 
     gantt.redraw = function (tasks) {
 
-        initTimeDomain();
+        initTimeDomain(tasks);
         initAxis();
 
         var colors = []
         var colors = {};
 
         var color = d3.rgb(91, 115, 195);
-        
+
         var tooltip = d3.select("body")
             .append("div")
             .style("position", "absolute")
@@ -153,18 +149,14 @@ d3.gantt = function (element, elementId) {
             .attr("rx", 1)
             .attr("ry", 1)
             .attr("class", function (d) {
-            if (taskStatus[d.fields.status] == null) {
-                return "bar";
-            } else {
-                return taskStatus[d.fields.status];
+                return "bar-" + d.fields.status;
+        })
+            .style("fill", function (d) {
+            if (d.fields.stage) {
+                color = color.darker(1);
+                return color;
             }
         })
-            .style("fill", function(d){
-                if(d.fields.stage) {
-                    color = color.darker(1);
-                    return color;
-                }
-            })
             .transition()
             .attr("y", 0)
             .attr("transform", rectTransform)
@@ -197,15 +189,15 @@ d3.gantt = function (element, elementId) {
 
         rect.on("mouseover", function (d) {
             tooltip.text(d.fields.typeName + " for " + d.fields.packageName);
-            setTimeout(function(){
+            setTimeout(function () {
                 tooltip.style("visibility", "hidden");
             }, 3000);
             return tooltip.style("visibility", "visible");
         })
-        .on("mousemove", function () {
+            .on("mousemove", function () {
             return tooltip.style("top", (event.pageY - 10) + "px").style("left", (event.pageX + 10) + "px");
         })
-        .on("mouseout", function (d) {
+            .on("mouseout", function (d) {
             return tooltip.style("visibility", "hidden");
         });
 
@@ -248,13 +240,6 @@ d3.gantt = function (element, elementId) {
         if (!arguments.length)
             return taskTypes;
         taskTypes = value;
-        return gantt;
-    };
-
-    gantt.taskStatus = function (value) {
-        if (!arguments.length)
-            return taskStatus;
-        taskStatus = value;
         return gantt;
     };
 

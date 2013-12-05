@@ -11,9 +11,9 @@ angular.module('myApp', [
   'elasticjs.service'
 ]).
 config(['$routeProvider', function($routeProvider) {
-  $routeProvider.when('/view1', {templateUrl: 'views/gantt/gantt.html', controller: 'GanttController'});
-  $routeProvider.when('/view2', {templateUrl: 'views/environment/environment.html', controller: 'EnvironmentController'});
-  $routeProvider.otherwise({redirectTo: '/view1'});
+  $routeProvider.when('/deployment', {templateUrl: 'views/gantt/gantt.html', controller: 'GanttController'});
+  $routeProvider.when('/environments', {templateUrl: 'views/environment/environment.html', controller: 'EnvironmentController'});
+  $routeProvider.otherwise({redirectTo: '/deployment'});
 }]);
 
 angular.module('myApp.controllers', []);
