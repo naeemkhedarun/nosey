@@ -1,4 +1,6 @@
-angular.module('myApp.controllers').controller('AppController', function ($scope, $location) {
+angular.module('myApp.controllers').controller('AppController', function ($scope, $location, $rootScope) {
+    
+    $rootScope.showDeploymenFilter = true;
     
     $scope.unsafeDeploymentId = $location.search().deploymentId;
     

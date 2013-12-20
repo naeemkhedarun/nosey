@@ -15,9 +15,8 @@
             <h1>Framework Telemetry</h1>
         </div>
 
-        <div class="row-fluid">
+        <div class="row-fluid" ng-show="showDeploymentFilter">
             <form class="form-inline" role="form">
-                <label class="sr-only" for="exampleInputEmail2">Email address</label>
                 <input style="width:100%" type="text" class="form-control" id="deploymentId" placeholder="Deployment ID Guid" ng-model="unsafeDeploymentId">
             </form>
         </div>
@@ -40,7 +39,6 @@
     <script src="lib/rxjs/rx.lite.js"></script>
     <script src="lib/rxjs/rx.time.js"></script>
 
-
     <script src="js/app.js"></script>
     <script src="js/services.js"></script>
     <script src="js/controllers.js"></script>
@@ -50,13 +48,13 @@
     <script src="js/directives/appVersion.js"></script>
     <script src="js/directives/graph.js"></script>
     <script src="js/directives/gantt.js"></script>
+    <script src="js/directives/groupedBar.js"></script>
     
     <script src="views/environment/environmentController.js"></script>
+    <script src="views/cdds/cddsController.js"></script>
     <script src="views/gantt/ganttController.js"></script>
     <script src="views/global/global.js"></script>
     
-    
-
 </body>
 
 </html>

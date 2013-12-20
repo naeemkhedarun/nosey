@@ -1,22 +1,52 @@
 <br />
 <div ng-show="deploymentId">
-    <div class="row-fluid" ng-hide="isComplete">
+    <div class="row-fluid" ng-show="status == 'running' || status == 'waiting'">
         <div class="alert alert-info">
             <span>Deploying to {{detail.environment}}</span>
             <span>- Total Duration: {{duration}}</span>
             <span>- from {{detail.sourceBranches}}</span>
-            <span>- started at {{detail.startTime}}</span>
+            <span>- started at {{startTime}}</span>
         </div>
     </div>
-    <div class="row-fluid" ng-show="isComplete">
+    <div class="row-fluid" ng-show="status == 'passed'">
         <div class="alert alert-success">
             <span>Successfully deployed to {{detail.environment}}</span>
             <span>- Total Duration: {{duration}}</span>
             <span>- from {{detail.sourceBranches}}</span>
+            <span>- started at {{startTime}}</span>
         </div>
     </div>
-    <div id="gantt" class="gantt" gantt></div>
-    <h3>Activity</h3>
+    <div class="row-fluid" ng-show="status == 'failed'">
+        <div class="alert alert-danger">
+            <span>Failed to deploy to {{detail.environment}}</span>
+            <span>- Total Duration: {{duration}}</span>
+            <span>- from {{detail.sourceBranches}}</span>
+            <span>- started at {{startTime}}</span>
+        </div>
+    </div>
+    
+    <h3 ng-show="status == 'failed'">Failure Details</h3>
+    <div class="alert alert-danger" ng-repeat="error in errors">
+        <span>{{error.message}}</span>
+    </div>
+    <div class="alert alert-warning" style="margin-top:-2em;" ng-repeat="error in errors">
+        <span>{{error.stacktrace}}</span>
+    </div>
+    
+    <div  ng-show="status == 'waiting'">
+        <h3>Waiting for framework data...</h3>
+        <div class="slider">
+            <div class="line"></div>
+            <div class="break dot1"></div>
+            <div class="break dot2"></div>
+            <div class="break dot3"></div>
+        </div>
+    </div>
+
+    <div id="gantt" class="gantt" gantt>
+    </div>
+
+    <h3 ng-show="results.length > 0">Activity</h3>
     <div ng-repeat="result in results | reverse">
         <span>{{result.fields.packageName}} has been deployed to {{result.fields.MachineName}} ({{result.fields.handler}}).</span>
     </div>

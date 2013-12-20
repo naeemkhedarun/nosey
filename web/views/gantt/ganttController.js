@@ -1,13 +1,16 @@
 angular.module('myApp.controllers').
-controller('GanttController', function ($scope, ejsResource, $http) {
+controller('GanttController', function ($scope, ejsResource, $http, $rootScope) {
 
     var ejs = ejsResource('http://asnav-monitor-01:9200');
 
-    $scope.lookup = {}
-    $scope.results = []
-    $scope.duration = 0;
-    $scope.isComplete = false;
+    $rootScope.showDeploymentFilter = true;
 
+    $scope.lookup = {};
+    $scope.results = [];
+    $scope.duration = 0;
+    $scope.status = "waiting";
+    $scope.errors = [];
+    
     $scope.$parent.$watch("deploymentId", function (deploymentId) {
         if (deploymentId) {
             
@@ -58,11 +61,11 @@ controller('GanttController', function ($scope, ejsResource, $http) {
                                 $scope.lookup[id] = item;
                                 $scope.results.push(item);
 
-                                item.redraw = i === (result.hits.hits.length - 1)
-
+                                item.redraw = i === (result.hits.hits.length - 1);
+                                $scope.status = "running";
                                 $scope.$broadcast("profiling", {
                                     new: item
-                                })
+                                });
                             }
                         }
                     }
@@ -88,7 +91,7 @@ controller('GanttController', function ($scope, ejsResource, $http) {
                                 end: moment(detail._source.end, "DD/MM/YYYY hh:mm:ss").toDate(),
                                 typeName: detail._source.stage,
                                 status: detail._source.stage,
-                                packageName: "asdf"
+                                packageName: ""
                             }
                             $scope.lookup[id] = detail;
 
@@ -100,17 +103,34 @@ controller('GanttController', function ($scope, ejsResource, $http) {
 
                             switch (detail.fields.typeName) {
                                 case "Invoke-BeforeDeploymentSteps":
-                                    $scope.startTime = detail.fields.start;
+                                    $scope.startTime = moment(detail.fields.start).format("dddd, Do MMMM YYYY, h:mma");
                                     break;
                                 case "Invoke-AfterDeploymentSteps":
                                     $scope.endTime = detail.fields.end;
-                                    $scope.isComplete = true;
+                                    $scope.status = "passed";
                                     $scope.subscription.dispose();
                                     break;   
                             }
                         }
 
                     }
+                }).
+                error(function (data, status, headers, config) {
+                    // called asynchronously if an error occurs
+                    // or server returns response with an error status.
+                });
+
+                $http({
+                    method: 'GET',
+                    url: 'http://asnav-monitor-01:9200/deploy/log/_search?q=level:error AND deploymentId:' + deploymentId
+                }).
+                success(function (result, status, headers, config) {
+                    if(result.hits.hits.length > 0)
+                    {
+                        $scope.errors = result.hits.hits.map(function(e){return e._source});
+                        $scope.status = "failed";    
+                    }
+                    
                 }).
                 error(function (data, status, headers, config) {
                     // called asynchronously if an error occurs

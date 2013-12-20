@@ -1,0 +1,24 @@
+<br />
+
+<div class="row-fluid">
+    
+    <div id="grouped-bar" class="grouped-bar" grouped-bar></div>
+    <grouped-bar />
+    
+    <form class="form-inline" role="form">
+        <input style="width:100%" type="text" class="form-control" id="serverFilter" placeholder="filter servers" ng-model="serverFilter">
+    </form>
+    
+    <hr />
+    
+    <div class="col-lg-12 alert alert-danger" ng-repeat="server in servers | filter:serverFilter">
+
+        <span class="badge pull-right">{{server.failedPublications.length}}</span>
+            {{ server.server }}
+        <hr />
+        <div ng-repeat="pub in server.failedPublications" style="display:inline">
+            <span class="label label-danger">{{pub.Name}}</span>
+        </div>
+
+    </div>
+</div>

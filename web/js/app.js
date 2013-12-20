@@ -13,6 +13,7 @@ angular.module('myApp', [
 config(['$routeProvider', function($routeProvider) {
   $routeProvider.when('/deployment', {templateUrl: 'views/gantt/gantt.html', controller: 'GanttController'});
   $routeProvider.when('/environments', {templateUrl: 'views/environment/environment.html', controller: 'EnvironmentController'});
+  $routeProvider.when('/cdds', {templateUrl: 'views/cdds/cdds.html', controller: 'CddsController'});
   $routeProvider.otherwise({redirectTo: '/deployment'});
 }]);
 

@@ -1,7 +1,9 @@
 angular.module('myApp.controllers').
 controller('EnvironmentController',
-    function ($scope, $http) {
+    function ($scope, $http, $rootScope) {
 
+        $rootScope.showDeploymentFilter = false;
+        
         $scope.environments = {}
         
         $http({method: 'GET', url: 'http://asnav-monitor-01:9200/deploy/detail/_search?q=isLatest:true&size=200'}).

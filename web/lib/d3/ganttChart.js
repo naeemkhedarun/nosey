@@ -107,7 +107,6 @@ d3.gantt = function (element, elementId) {
             //         return d3.scale.linear()(d.fields.end) - d3.scale.linear()(d.fields.start);
             return (x(d.fields.end) - x(d.fields.start));
         })
-
         ;
 
 
@@ -188,10 +187,10 @@ d3.gantt = function (element, elementId) {
         });
 
         rect.on("mouseover", function (d) {
-            tooltip.text(d.fields.typeName + " for " + d.fields.packageName);
+            tooltip.text(d.fields.typeName + "(" + d.fields.packageName + ")");
             setTimeout(function () {
                 tooltip.style("visibility", "hidden");
-            }, 3000);
+            }, 10000);
             return tooltip.style("visibility", "visible");
         })
             .on("mousemove", function () {
